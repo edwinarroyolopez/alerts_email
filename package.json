@@ -1,0 +1,17 @@
+{
+  "name": "alerts_email",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mysql": "^2.16.0",
+    "nodemon": "^1.18.10",
+    "process": "^0.11.10"
+  }
+}
