@@ -1,13 +1,24 @@
 const mysql = require('mysql');
 const process = require('process');
+const nodemailer = require('nodemailer');
+const smtpTransport = require('nodemailer-smtp-transport');
 
 const con = mysql.createConnection({
-  host: "localhost",
+  host: "127.0.0.1",
   user: "root",
   password: "abcd1234",
   database: "bitnami_pm",
-  port: 3307
+  port: 3306
 });
+
+const transporter = nodemailer.createTransport(smtpTransport({
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  auth: {
+    user: 'zeroedprogrammer@gmail.com',
+    pass: '@zeroedprogrammer'
+  }
+}));
 
 const pid = process.pid;
 initialState().then((actualId) =>{
@@ -53,7 +64,7 @@ function lastId(){
 
 function checkIfNewRecordHasBeenAdd(id){
   return new Promise( resolve => {
-    con.query('SELECT * FROM alertasInformacion WHERE idAlerta > ?', [id],
+    con.query('SELECT idAlerta,dsAlerta, DATE_FORMAT(feAlerta,"%Y-%m-%d %r") as feAlerta FROM alertasInformacion WHERE idAlerta > ?', [id],
       function (err, rows) {
         try {
           if(rows.length>0){ /* New insert => email logic */
@@ -75,6 +86,61 @@ function checkIfNewRecordHasBeenAdd(id){
 function send_email(data){
   setTimeout(() => {
     console.log('Email enviado...');
+      let r = data[data.length-1];
+      let content_text = 'id: ' + r.idAlerta + ' ds: '+  r.dsAlerta+ ' fecha: '+  r.feAlerta;
+
+      let content_html = `<!DOCTYPE html>
+      <html lang="en" dir="ltr">
+        <head>
+          <meta charset="utf-8">
+          <title></title>
+          <style type="text/css" media="screen">
+            div.table{
+              border: solid 1px #CCC;
+            }
+            div.table div.head{
+            }
+            div.table div.cell_head{
+              background: #63c;
+              color:#fff;
+              line-height:1.5em;
+              float:left;
+              padding: 0 10px 0 10px;
+              width: 5em;
+            }
+            div.table div.cell_row{
+              line-height:1.5em;
+              padding: 0 10px 0 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="table">
+            <div class="head">
+              <div class="cell_head">Id alert:</div><div class="cell_row">${r.idAlerta}</div>
+              <div class="cell_head">Ds alert:</div><div class="cell_row">${r.dsAlerta}</div>
+              <div class="cell_head">Fecha:</div><div class="cell_row">${r.feAlerta}</div>
+            </div>
+          </div>
+        </body>
+      </html>`;
+
+      let mailOptions = {
+        from: 'zeroedprogrammer@gmail.com',
+        to: 'edwin.arroyo@landsoft.com.co',
+        subject: 'Alert - '+r.idAlerta,
+        text: content_text,
+        html: content_html
+      };
+      transporter.sendMail(mailOptions, function(error, info) {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });
+
+
   },10000)
 }
 
